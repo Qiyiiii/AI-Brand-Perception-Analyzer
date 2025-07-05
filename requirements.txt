@@ -1,0 +1,13 @@
+langgraph
+langchain_anthropic
+tavily-python
+langchain_community
+langchain_openai
+openai
+pydantic
+requests
+pandas
+typing-extensions
+langchain-core
+flask
+matplotlib
