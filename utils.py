@@ -1,9 +1,10 @@
 import requests
 import json
 from enum import Enum
+import os
 
-OPENROUTER_API_KEY = "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"
-
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+print(f"Using OpenRouter API key: {OPENROUTER_API_KEY}")
 class ModelEndpoint(Enum):
     GPT_4_1_MINI = "openai/gpt-4.1-mini"
     CLAUDE_3_HAIKU = "anthropic/claude-3-haiku"
@@ -35,6 +36,7 @@ def generate(model_url, message):
             ],
         })
     )
+
     return response.json()["choices"][0]["message"]["content"]
 
 models = [
