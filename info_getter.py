@@ -504,7 +504,6 @@ def get_top_3_aspects_by_brand(conn):
 
 def plot_company_trend_over_time(db_path="eval_cache.db", output_path="company_trend.png"):
     # Load data
-    # Load data
     conn = sqlite3.connect(db_path)
     df = pd.read_sql_query("""
         SELECT timestamp, company FROM eval_cache
@@ -515,16 +514,10 @@ def plot_company_trend_over_time(db_path="eval_cache.db", output_path="company_t
     if df.empty:
         return None
 
-    # Ensure timestamp is in datetime format
     df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
-
-    # Remove invalid timestamps
     df = df.dropna(subset=['timestamp'])
 
-    # Calculate total time span
     time_range_minutes = (df['timestamp'].max() - df['timestamp'].min()).total_seconds() / 60
-
-    # Choose frequency based on span
     if time_range_minutes <= 60:
         freq = 'min'
     elif time_range_minutes <= 1440:
@@ -534,12 +527,10 @@ def plot_company_trend_over_time(db_path="eval_cache.db", output_path="company_t
     else:
         freq = 'W'
 
-    # Group by time and company
     grouped = df.groupby([pd.Grouper(key='timestamp', freq=freq), 'company']).size().unstack(fill_value=0)
     cumulative = grouped.cumsum()
     top_companies = cumulative.iloc[-1].sort_values(ascending=False).head(3).index
 
-    # Plot
     fig, ax = plt.subplots(figsize=(12, 6))
     for company in cumulative.columns:
         if company in top_companies:
@@ -553,28 +544,22 @@ def plot_company_trend_over_time(db_path="eval_cache.db", output_path="company_t
     ax.legend(title="Company", bbox_to_anchor=(1.05, 1), loc='upper left')
     ax.grid(True)
 
-    # Format x-axis
-    if freq == 'min':
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-        ax.xaxis.set_major_locator(mdates.MinuteLocator(interval=5))
-    elif freq == 'h':
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-        ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))
-    elif freq == 'D':
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-        ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
-    else:
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %d'))
-        ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=1))
+    # Set exactly 4 x-axis ticks (start, 1/3, 2/3, end)
+    min_ts = df['timestamp'].min()
+    max_ts = df['timestamp'].max()
+    step = (max_ts - min_ts) / 3
+    tick_locs = [min_ts + i * step for i in range(4)]
+    tick_labels = [ts.strftime('%Y-%m-%d %H:%M') for ts in tick_locs]
 
-    ax.set_xlim([df['timestamp'].min(), df['timestamp'].max()])
-    plt.xticks(rotation=45)
+    ax.set_xticks(tick_locs)
+    ax.set_xticklabels(tick_labels, rotation=45, ha='right')
+    ax.tick_params(axis='x', which='major', labelsize=9)
+
+    ax.set_xlim([min_ts, max_ts])
     plt.tight_layout()
 
-    # Save to buffer and encode
     buffer = BytesIO()
     fig.savefig(buffer, format='png')
     plt.close(fig)
     buffer.seek(0)
-    img_base64 = base64.b64encode(buffer.read()).decode('utf-8')
-    return img_base64
+    return base64.b64encode(buffer.read()).decode('utf-8')
