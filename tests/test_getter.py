@@ -94,11 +94,12 @@ def test_export_all_results_creates_csv(db_conn):
     if os.path.exists(output):
         os.remove(output)
 
-    export_all_results(export_csv_path=output)
+    export_all_results(db_path=TEST_DB_PATH, export_csv_path=output)  # ✅ FIXED HERE
     assert os.path.exists(output)
 
     df = pd.read_csv(output)
     assert "question" in df.columns
     os.remove(output)
+
 
 
